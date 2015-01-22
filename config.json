@@ -1,0 +1,9 @@
+{
+	"artifactoryServer": "http://localhost:8080", 
+	"artifactoryName": "artifactory",
+	"repoKey": "libs-release-local",
+	"groupId": "",
+	"artifactId": "",
+	"targetDir": "d:\\test",
+	"archiveDir": "d:\\test\\archive"
+}

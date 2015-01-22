@@ -1,0 +1,42 @@
+
+
+apply plugin: 'java'
+apply plugin: 'groovy'
+
+sourceSets {
+	main {
+		groovy {
+			srcDirs = ['src']
+		}
+		java {
+			srcDirs = []
+		}
+		resources {
+			srcDirs = ['src']
+		}
+	}
+	test {
+		groovy {
+			srcDirs = ['test']
+		}
+		java {
+			srcDirs = []
+		}
+	}
+}
+
+dependencies {
+	compile fileTree(dir: 'lib', include: '*.jar') 
+}
+
+jar {
+    manifest {
+        attributes("Implementation-Title": "iUp",
+                   "Implementation-Version": "1.0",
+				   "Main-Class": "iup.IUpUI",
+				   "Class-Path": configurations.compile.collect { 
+						"lib/${it.getName()}"
+					}.join(' '))
+    }
+}
+
