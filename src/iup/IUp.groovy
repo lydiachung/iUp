@@ -28,20 +28,22 @@ import javafx.beans.property.SimpleStringProperty
 import static groovyx.net.http.ContentType.*
 
 import java.util.regex.*
+import javafx.application.Platform
 
 public class IUp {
 	
 	private SimpleStringProperty messageProperty;
 	private SimpleDoubleProperty progressProperty;
+	private String version;
 	
 	static DateTimeFormatter formatter = DateTimeFormat.forPattern('yyyyMMdd-HHmmss')
 	
 	private File logFile;
 
-	public IUp(SimpleStringProperty messageProperty, SimpleDoubleProperty progressProperty) {
+	public IUp(SimpleStringProperty messageProperty, SimpleDoubleProperty progressProperty, String version) {
 		this.messageProperty = messageProperty;
 		this.progressProperty = progressProperty;
-		
+		this.version = version;
 	}
 
 	def logInfoMessage(String log) {
@@ -65,11 +67,20 @@ public class IUp {
 		if (this.messageProperty == null || debug) {
 			// println log -> launch4j executable doesn't like this line... ><
 		} else {
-			this.messageProperty.setValue(log) // info only
+			Platform.runLater(new Runnable() {
+				public void run() {
+					messageProperty.setValue(log) // info only
+				}
+			});
 		}
 		
 		if (this.progressProperty != null && progress != null) {
-			this.progressProperty.setValue(progress/100)
+			Platform.runLater(new Runnable() {
+				public void run() {
+					progressProperty.setValue(progress/100)
+				}
+			});
+			
 		}
 	}
 	
@@ -81,7 +92,9 @@ public class IUp {
 			// step 0: create log file
 			this.logFile = new File("iup.log")
 			this.logFile.write("")
-		
+			
+			logInfoMessage("Version entered: ${version}")
+			
 			// ------------------------------------------
 			// step 1: load config from json file
 			
@@ -89,7 +102,7 @@ public class IUp {
 			
 			Map config = loadConfig();
 			
-			logInfoMessage( "Config loaded ${config}.", 5)
+			logInfoMessage("Config loaded ${config}.", 5)
 		
 			
 			// ------------------------------------------
@@ -208,6 +221,7 @@ public class IUp {
 		List<Version> versionList = new ArrayList<Version>()
 		String uri, matchURI
 		def matcher, parse
+		Version matchVersion
 
 		for(int i = 0; i < uriList.size(); i++) {
 			
@@ -221,18 +235,25 @@ public class IUp {
 			if (!matcher.matches()) continue;
 
 			matchURI = matcher[0][1]
+			matchVersion = Version.getVersion(matchURI)
+			
+			if (matchVersion.getString().indexOf(version) == -1) continue; // not match
 
 			logDebugMessage("Match found ${matchURI}.")
 			
-			versionList.add(Version.getVersion(matchURI))
+			versionList.add(matchVersion)
 			
 		}
 		
 		logInfoMessage("Results are parsed.")
 		
+		if (versionList.isEmpty()) {
+			throw new Exception("No match found");
+		}
+		
 		Collections.sort(versionList)
 		
-		return versionList.last().getString()
+		return ((Version) versionList.last()).getString()
 		
 	}
 	
